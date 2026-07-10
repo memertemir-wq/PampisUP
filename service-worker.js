@@ -1,10 +1,12 @@
-const CACHE_NAME = 'pampisup-v6-premium';
+const CACHE_NAME = 'pampisup-v7-premium';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './style.css',
     './app.js',
-    './manifest.json'
+    './manifest.json',
+    './icon-192.png',
+    './icon-512.png'
 ];
 
 // Install Event

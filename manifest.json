@@ -2,13 +2,11 @@
     "name": "pampisUp",
     "short_name": "pampisUp",
     "description": "Bize özel mesajlaşma uygulaması",
-    "start_url": "./",
-    "scope": "./",
+    "start_url": "index.html",
     "display": "standalone",
     "orientation": "portrait",
     "background_color": "#ffffff",
     "theme_color": "#2563eb",
-    "categories": ["social", "lifestyle"],
     "icons": [
         {
             "src": "icon-192.png",
@@ -21,14 +19,6 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
-        }
-    ],
-    "screenshots": [
-        {
-            "src": "icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "form_factor": "narrow"
         }
     ]
 }
