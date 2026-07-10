@@ -1,0 +1,94 @@
+/* pampisUp Premium Custom Styles */
+
+/* Elegant Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* slate-300 */
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; /* slate-400 */
+}
+
+/* Animations */
+@keyframes heartbeat {
+    0%, 100% {
+        transform: scale(1);
+    }
+    10%, 30% {
+        transform: scale(0.9);
+    }
+    20%, 40% {
+        transform: scale(1.1);
+    }
+    50% {
+        transform: scale(1);
+    }
+}
+.heartbeat {
+    animation: heartbeat 2s infinite ease-in-out;
+}
+
+@keyframes onlinePulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+    }
+}
+.online-pulse {
+    animation: onlinePulse 2s infinite;
+}
+
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+.message-bubble {
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes blob {
+    0% {
+        transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+        transform: translate(30px, -50px) scale(1.1);
+    }
+    66% {
+        transform: translate(-20px, 20px) scale(0.9);
+    }
+    100% {
+        transform: translate(0px, 0px) scale(1);
+    }
+}
+.animate-blob {
+    animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+    animation-delay: 2s;
+}
+
+/* Modal Transitions */
+.modal-active {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+.modal-active > div {
+    transform: scale(1) !important;
+}
