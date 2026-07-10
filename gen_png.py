@@ -1,33 +1,36 @@
-import struct
-import zlib
+from PIL import Image, ImageDraw, ImageFont
 
-def create_png(width, height, r, g, b, filename):
-    # PNG signature
-    png = b'\x89PNG\r\n\x1a\n'
+def create_icon(size, filename):
+    # Create blue background #2563eb
+    img = Image.new('RGB', (size, size), color=(37, 99, 235))
+    d = ImageDraw.Draw(img)
     
-    def chunk(tag, data):
-        return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', zlib.crc32(tag + data) & 0xffffffff)
+    text = "pampişUp"
+    
+    # Try to load a generic font or use default
+    try:
+        # Scale font size relative to image size
+        font_size = int(size * 0.15)
+        # Try finding standard fonts on linux
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+    except IOError:
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", font_size)
+        except IOError:
+            font = ImageFont.load_default()
+            
+    # Calculate text bounding box
+    bbox = d.textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    
+    # Center text
+    x = (size - text_w) / 2
+    y = (size - text_h) / 2
+    
+    d.text((x, y), text, fill=(255, 255, 255), font=font)
+    img.save(filename)
 
-    # IHDR chunk
-    ihdr = struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)
-    png += chunk(b'IHDR', ihdr)
-    
-    # IDAT chunk (pixel data)
-    # Each row starts with a filter byte (0)
-    raw_data = b''
-    row = b'\x00' + struct.pack('>BBB', r, g, b) * width
-    for _ in range(height):
-        raw_data += row
-        
-    compressed = zlib.compress(raw_data)
-    png += chunk(b'IDAT', compressed)
-    
-    # IEND chunk
-    png += chunk(b'IEND', b'')
-    
-    with open(filename, 'wb') as f:
-        f.write(png)
-
-# Create 192x192 and 512x512 solid blue (#2563eb = 37, 99, 235) PNGs
-create_png(192, 192, 37, 99, 235, 'icon-192.png')
-create_png(512, 512, 37, 99, 235, 'icon-512.png')
+create_icon(192, 'icon-192.png')
+create_icon(512, 'icon-512.png')
+print("Icons generated successfully!")

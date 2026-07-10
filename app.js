@@ -1,13 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Gun.js Database Setup ---
-    // Public peer relay for syncing over the internet (no backend needed!)
-    const peers = ['https://relay.peer.ooo/gun'];
-    const gun = Gun(peers);
-    // A unique, hard-to-guess room ID for privacy
-    const db = gun.get('pampisup-secret-chat-room-v3-unique');
-    const db_msgs = db.get('messages');
-    const db_profiles = db.get('profiles');
-    const db_presence = db.get('presence');
+    // ==========================================
+    // 🔥 FIREBASE VERİTABANI BAĞLANTISI 🔥
+    // ==========================================
+    // BURAYA KENDİ FIREBASE BİLGİLERİNİ YAPIŞTIRACAKSIN
+    const firebaseConfig = {
+        apiKey: "AIzaSyDPPvwqpAVC_6cqb0p2hrOaRkB023sO65w",
+        authDomain: "pampisup.firebaseapp.com",
+        databaseURL: "https://pampisup-default-rtdb.firebaseio.com",
+        projectId: "pampisup",
+        storageBucket: "pampisup.firebasestorage.app",
+        messagingSenderId: "1011672061391",
+        appId: "1:1011672061391:web:d478321ef0fb92a34f2eba"
+    };
+
+    // Firebase'i Başlat
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const msgsRef = db.ref('pampisUp/messages');
+    const profilesRef = db.ref('pampisUp/profiles');
+    const presenceRef = db.ref('pampisUp/presence');
 
     // --- State & Config ---
     const USERS = {
@@ -15,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
         '2009': 'partner'
     };
     
-    // In-Memory Data (Synced via Gun)
     let messagesObj = {}; 
     let profiles = {
         'me': { name: 'Aşkım', avatar: '🦋' },
@@ -37,21 +47,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
     
-    // Header Elements
     const partnerNameEl = document.getElementById('partner-name');
     const partnerAvatarEmojiEl = document.getElementById('partner-avatar-emoji');
     const partnerAvatarImgEl = document.getElementById('partner-avatar-img');
     const partnerOnlineIndicator = document.getElementById('partner-online-indicator');
     const partnerLastSeenEl = document.getElementById('partner-last-seen');
 
-    // Chat Image Upload
     const attachBtn = document.getElementById('attach-btn');
     const chatImageUpload = document.getElementById('chat-image-upload');
     const imagePreviewContainer = document.getElementById('image-preview-container');
     const imagePreview = document.getElementById('image-preview');
     const removeImageBtn = document.getElementById('remove-image-btn');
 
-    // Profile Modal
     const profileBtn = document.getElementById('profile-btn');
     const profileModal = document.getElementById('profile-modal');
     const closeProfileBtn = document.getElementById('close-profile-btn');
@@ -64,40 +71,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveProfileBtn = document.getElementById('save-profile-btn');
     const logoutBtn = document.getElementById('logout-btn');
 
-    // --- Gun.js Listeners ---
+    // --- Firebase Dinleyicileri (Gerçek Zamanlı) ---
     function setupRealtimeListeners() {
-        // Listen for new/updated messages
-        db_msgs.map().on((msg, id) => {
-            if (msg) {
-                messagesObj[id] = msg;
-                debouncedRenderMessages();
+        // Mesajları Dinle
+        msgsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                messagesObj = data;
+                renderMessages();
             }
         });
 
-        // Listen for profile updates
-        db_profiles.map().on((profile, id) => {
-            if (profile && (id === 'me' || id === 'partner')) {
-                profiles[id] = { name: profile.name, avatar: profile.avatar };
+        // Profilleri Dinle
+        profilesRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if(data.me) profiles.me = data.me;
+                if(data.partner) profiles.partner = data.partner;
                 loadProfileInfo();
-                debouncedRenderMessages();
+                renderMessages();
             }
         });
 
-        // Listen for presence (partner online status)
-        db_presence.map().on((time, id) => {
-            if (time && (id === 'me' || id === 'partner')) {
-                presenceData[id] = time;
+        // Çevrimiçi Durumunu Dinle
+        presenceRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if(data.me) presenceData.me = data.me;
+                if(data.partner) presenceData.partner = data.partner;
                 updateLastSeen();
             }
         });
-    }
-
-    let renderTimeout;
-    function debouncedRenderMessages() {
-        clearTimeout(renderTimeout);
-        renderTimeout = setTimeout(() => {
-            renderMessages();
-        }, 50); // small delay to batch renders
     }
 
     // --- Initialization ---
@@ -106,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
             showChat();
             setupRealtimeListeners();
             loadProfileInfo();
-            renderMessages();
             startHeartbeat();
         } else {
             showLogin();
@@ -131,8 +134,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (USERS[pass]) {
             currentUser = USERS[pass];
             localStorage.setItem('pampisUp_currentUser', currentUser);
-            // On fresh login, publish our profile to Gun so partner sees us
-            db_profiles.get(currentUser).put(profiles[currentUser]);
+            
+            // Profil bilgisini Firebase'e gönder
+            profilesRef.child(currentUser).set(profiles[currentUser]);
             init();
         } else {
             loginError.classList.remove('hidden');
@@ -201,7 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const partnerId = currentUser === 'me' ? 'partner' : 'me';
         const partnerProfile = profiles[partnerId];
 
-        // Convert messages object to array and sort by timestamp
         const msgsArray = Object.values(messagesObj).filter(m => m && m.id).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
         msgsArray.forEach(msg => {
@@ -235,8 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </span>
                 `;
             } else if (msg.status !== 'read') {
-                // If partner's message is not read, mark it read via Gun!
-                db_msgs.get(msg.id).get('status').put('read');
+                // Partner'ın mesajını okuduysak Firebase'de 'read' yap
+                msgsRef.child(msg.id).update({ status: 'read' });
             }
 
             const bubbleClass = isMe 
@@ -277,8 +280,8 @@ document.addEventListener('DOMContentLoaded', () => {
             timestamp: new Date().toISOString()
         };
 
-        // Publish to Realtime DB
-        db_msgs.get(msgId).put(newMsg);
+        // Mesajı Firebase'e kaydet
+        msgsRef.child(msgId).set(newMsg);
         
         messageInput.value = '';
         messageInput.style.height = 'auto';
@@ -330,12 +333,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if(heartbeatInterval) clearInterval(heartbeatInterval);
         const beat = () => {
             if(!currentUser) return;
-            // Ping DB with current time
-            db_presence.get(currentUser).put(Date.now());
-            updateLastSeen(); 
+            presenceRef.child(currentUser).set(Date.now());
         };
         beat();
-        heartbeatInterval = setInterval(beat, 5000); // 5 sec
+        heartbeatInterval = setInterval(beat, 5000); // 5 saniyede bir ping at
     }
 
     function updateLastSeen() {
@@ -349,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const diff = Date.now() - lastSeen;
-        if (diff < 15000) { // 15 seconds buffer for online status
+        if (diff < 15000) { // 15 saniye içinde ping gelmişse çevrimiçi
             partnerLastSeenEl.innerHTML = `Çevrimiçi <span class="w-1.5 h-1.5 rounded-full bg-premiumBlue animate-pulse inline-block mb-0.5 ml-0.5"></span>`;
             partnerLastSeenEl.className = 'text-xs text-premiumBlue font-medium flex items-center';
             partnerOnlineIndicator.className = 'absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-white online-pulse';
@@ -368,7 +369,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Trigger local update occasionally in case partner goes offline and no network events fire
     setInterval(() => { if(currentUser) updateLastSeen(); }, 10000);
 
     // --- Profile Modal Logic ---
@@ -432,8 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
             newAvatar = editAvatar.value.trim();
         }
         
-        // Publish to Gun.js
-        db_profiles.get(currentUser).put({
+        profilesRef.child(currentUser).set({
             name: newName,
             avatar: newAvatar
         });
