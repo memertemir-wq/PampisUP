@@ -11,24 +11,16 @@
     "categories": ["social", "lifestyle"],
     "icons": [
         {
-            "src": "https://via.placeholder.com/192/2563eb/ffffff.png?text=pUp",
+            "src": "icon-192.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "https://via.placeholder.com/512/2563eb/ffffff.png?text=pampisUp",
+            "src": "icon-512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
-        }
-    ],
-    "screenshots": [
-        {
-            "src": "https://via.placeholder.com/1080x1920/ffffff/2563eb.png?text=pampisUp+Chat",
-            "sizes": "1080x1920",
-            "type": "image/png",
-            "form_factor": "narrow"
         }
     ]
 }
