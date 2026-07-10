@@ -1,34 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Gun.js Database Setup ---
+    // Public peer relay for syncing over the internet (no backend needed!)
+    const peers = ['https://relay.peer.ooo/gun'];
+    const gun = Gun(peers);
+    // A unique, hard-to-guess room ID for privacy
+    const db = gun.get('pampisup-secret-chat-room-v3-unique');
+    const db_msgs = db.get('messages');
+    const db_profiles = db.get('profiles');
+    const db_presence = db.get('presence');
+
     // --- State & Config ---
     const USERS = {
         '0589': 'me',
         '2009': 'partner'
     };
     
-    // Default Profiles
-    const defaultProfiles = {
+    // In-Memory Data (Synced via Gun)
+    let messagesObj = {}; 
+    let profiles = {
         'me': { name: 'Aşkım', avatar: '🦋' },
         'partner': { name: 'Pampiş', avatar: '❤️' }
     };
+    let presenceData = { 'me': 0, 'partner': 0 };
 
     let currentUser = localStorage.getItem('pampisUp_currentUser');
-    
-    // Initialize Profiles if not exist
-    if (!localStorage.getItem('pampisUp_profiles')) {
-        localStorage.setItem('pampisUp_profiles', JSON.stringify(defaultProfiles));
-    }
-
-    // Initialize Messages if not exist
-    if (!localStorage.getItem('pampisUp_messages')) {
-        localStorage.setItem('pampisUp_messages', JSON.stringify([]));
-    }
-
-    // Initialize Presence
-    if (!localStorage.getItem('pampisUp_presence')) {
-        localStorage.setItem('pampisUp_presence', JSON.stringify({ 'me': 0, 'partner': 0 }));
-    }
-
-    let pendingChatImage = null; // Stores Base64 of image to send
+    let pendingChatImage = null;
 
     // --- DOM Elements ---
     const loginScreen = document.getElementById('login-screen');
@@ -48,14 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const partnerOnlineIndicator = document.getElementById('partner-online-indicator');
     const partnerLastSeenEl = document.getElementById('partner-last-seen');
 
-    // Chat Image Upload Elements
+    // Chat Image Upload
     const attachBtn = document.getElementById('attach-btn');
     const chatImageUpload = document.getElementById('chat-image-upload');
     const imagePreviewContainer = document.getElementById('image-preview-container');
     const imagePreview = document.getElementById('image-preview');
     const removeImageBtn = document.getElementById('remove-image-btn');
 
-    // Profile Modal Elements
+    // Profile Modal
     const profileBtn = document.getElementById('profile-btn');
     const profileModal = document.getElementById('profile-modal');
     const closeProfileBtn = document.getElementById('close-profile-btn');
@@ -68,20 +64,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveProfileBtn = document.getElementById('save-profile-btn');
     const logoutBtn = document.getElementById('logout-btn');
 
+    // --- Gun.js Listeners ---
+    function setupRealtimeListeners() {
+        // Listen for new/updated messages
+        db_msgs.map().on((msg, id) => {
+            if (msg) {
+                messagesObj[id] = msg;
+                debouncedRenderMessages();
+            }
+        });
+
+        // Listen for profile updates
+        db_profiles.map().on((profile, id) => {
+            if (profile && (id === 'me' || id === 'partner')) {
+                profiles[id] = { name: profile.name, avatar: profile.avatar };
+                loadProfileInfo();
+                debouncedRenderMessages();
+            }
+        });
+
+        // Listen for presence (partner online status)
+        db_presence.map().on((time, id) => {
+            if (time && (id === 'me' || id === 'partner')) {
+                presenceData[id] = time;
+                updateLastSeen();
+            }
+        });
+    }
+
+    let renderTimeout;
+    function debouncedRenderMessages() {
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            renderMessages();
+        }, 50); // small delay to batch renders
+    }
+
     // --- Initialization ---
     function init() {
         if (currentUser) {
             showChat();
+            setupRealtimeListeners();
             loadProfileInfo();
             renderMessages();
-            updateLastSeen();
             startHeartbeat();
         } else {
             showLogin();
         }
     }
 
-    // --- UI Switches ---
     function showLogin() {
         loginScreen.classList.remove('hidden');
         chatScreen.classList.add('hidden');
@@ -95,12 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
         chatScreen.classList.add('flex');
     }
 
-    // --- Login Logic ---
     function handleLogin() {
         const pass = passwordInput.value.trim();
         if (USERS[pass]) {
             currentUser = USERS[pass];
             localStorage.setItem('pampisUp_currentUser', currentUser);
+            // On fresh login, publish our profile to Gun so partner sees us
+            db_profiles.get(currentUser).put(profiles[currentUser]);
             init();
         } else {
             loginError.classList.remove('hidden');
@@ -114,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') handleLogin();
     });
 
-    // --- Image Compression Utility ---
+    // --- Image Compression ---
     function compressImage(file, maxWidth, callback) {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -131,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                // Kompresyon: Kaliteyi hafif düşür, JPEG olarak kaydet
                 callback(canvas.toDataURL('image/jpeg', 0.6)); 
             };
             img.src = e.target.result;
@@ -139,153 +170,123 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(file);
     }
 
-    // --- Helper: Render Avatar ---
     function renderAvatar(avatarData, emojiEl, imgEl) {
-        if (avatarData.startsWith('data:image/')) {
+        if (avatarData && avatarData.startsWith('data:image/')) {
             emojiEl.classList.add('hidden');
             imgEl.src = avatarData;
             imgEl.classList.remove('hidden');
         } else {
             imgEl.classList.add('hidden');
             imgEl.src = '';
-            emojiEl.textContent = avatarData;
+            emojiEl.textContent = avatarData || '🦋';
             emojiEl.classList.remove('hidden');
         }
     }
 
-    // --- Chat Logic ---
-    function getProfiles() {
-        return JSON.parse(localStorage.getItem('pampisUp_profiles'));
-    }
-
-    function getMessages() {
-        return JSON.parse(localStorage.getItem('pampisUp_messages'));
-    }
-
     function loadProfileInfo() {
-        const profiles = getProfiles();
         const partnerId = currentUser === 'me' ? 'partner' : 'me';
-        partnerNameEl.textContent = profiles[partnerId].name;
-        renderAvatar(profiles[partnerId].avatar, partnerAvatarEmojiEl, partnerAvatarImgEl);
+        const partnerProfile = profiles[partnerId];
+        partnerNameEl.textContent = partnerProfile.name;
+        renderAvatar(partnerProfile.avatar, partnerAvatarEmojiEl, partnerAvatarImgEl);
     }
 
-    function markMessagesAsRead() {
-        let messages = getMessages();
-        let changed = false;
-        messages = messages.map(msg => {
-            if (msg.senderId !== currentUser && msg.status !== 'read') {
-                changed = true;
-                return { ...msg, status: 'read' };
-            }
-            return msg;
-        });
-        if (changed) {
-            localStorage.setItem('pampisUp_messages', JSON.stringify(messages));
-        }
+    // --- Message Rendering ---
+    function formatTime(isoString) {
+        const date = new Date(isoString);
+        return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
     }
 
     function renderMessages() {
-        markMessagesAsRead(); // Okunmamış mesajları okundu işaretle
-        const messages = getMessages();
         chatMessages.innerHTML = '';
-        
-        const profiles = getProfiles();
-        let lastDate = '';
+        const partnerId = currentUser === 'me' ? 'partner' : 'me';
+        const partnerProfile = profiles[partnerId];
 
-        messages.forEach(msg => {
+        // Convert messages object to array and sort by timestamp
+        const msgsArray = Object.values(messagesObj).filter(m => m && m.id).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        msgsArray.forEach(msg => {
             const isMe = msg.senderId === currentUser;
-            const profile = profiles[msg.senderId];
-            
-            // Format time
-            const msgDate = new Date(msg.timestamp);
-            const timeStr = msgDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-            
-            // Date separator
-            const dateStr = msgDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
-            if (dateStr !== lastDate) {
-                const dateEl = document.createElement('div');
-                dateEl.className = 'w-full flex justify-center my-4';
-                dateEl.innerHTML = `<span class="bg-gray-100/80 backdrop-blur-md text-gray-500 text-xs font-semibold py-1.5 px-4 rounded-full shadow-sm border border-gray-200">${dateStr}</span>`;
-                chatMessages.appendChild(dateEl);
-                lastDate = dateStr;
-            }
+            const msgEl = document.createElement('div');
+            msgEl.className = `flex ${isMe ? 'justify-end' : 'justify-start'} animate-bubbleIn`;
 
-            // Tick Icon (Only for sender)
-            let tickHtml = '';
-            if (isMe) {
-                if (msg.status === 'read') {
-                    // Double Blue Tick (Read)
-                    tickHtml = `<svg class="w-3.5 h-3.5 text-blue-400 inline-block ml-1" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path><path stroke-linecap="round" stroke-linejoin="round" d="M1 13l4 4M15 7l-4 4"></path></svg>`;
+            let avatarHtml = '';
+            if (!isMe) {
+                if (partnerProfile.avatar.startsWith('data:image/')) {
+                    avatarHtml = `<img src="${partnerProfile.avatar}" class="w-8 h-8 rounded-full object-cover shadow-sm self-end mr-2">`;
                 } else {
-                    // Single Gray Tick (Sent)
-                    tickHtml = `<svg class="w-3 h-3 text-blue-200 inline-block ml-1" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>`;
+                    avatarHtml = `<div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-lg shadow-sm self-end mr-2">${partnerProfile.avatar}</div>`;
                 }
             }
 
-            // Image attachment
             let imageHtml = '';
-            if (msg.imageUrl) {
-                imageHtml = `<img src="${msg.imageUrl}" class="w-full max-w-[240px] rounded-xl mb-2 object-cover border border-white/20">`;
+            if (msg.imageUrl && msg.imageUrl.length > 10) {
+                imageHtml = `<img src="${msg.imageUrl}" class="w-full rounded-lg mb-2 cursor-pointer border border-white/20">`;
             }
-
-            // Message text (if any)
-            let textHtml = '';
-            if (msg.text) {
-                textHtml = `<p class="text-[15px] leading-relaxed break-words whitespace-pre-wrap ${!isMe && !msg.imageUrl ? 'mt-1' : ''}">${msg.text}</p>`;
-            }
-
-            const bubble = document.createElement('div');
-            bubble.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'} mb-3`;
             
-            bubble.innerHTML = `
-                <div class="message-bubble ${isMe ? 'message-sent' : 'message-received'} max-w-[80%] flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                    ${!isMe ? `<span class="text-[11px] font-semibold text-gray-500 mb-1 ml-1">${profile.name}</span>` : ''}
-                    <div class="${isMe ? 'bg-gradient-to-br from-premiumBlue to-indigo-600 text-white rounded-2xl rounded-br-sm shadow-md shadow-blue-500/20' : 'bg-white text-gray-800 rounded-2xl rounded-bl-sm shadow-sm border border-gray-100'} p-2 relative group min-w-[80px]">
-                        ${imageHtml}
-                        <div class="px-2 pb-1 flex flex-col">
-                            ${textHtml}
-                            <div class="flex items-center justify-end mt-1 space-x-1">
-                                <span class="text-[10px] ${isMe ? 'text-blue-100' : 'text-gray-400'} opacity-90">${timeStr}</span>
-                                ${tickHtml}
-                            </div>
-                        </div>
+            let statusHtml = '';
+            if (isMe) {
+                const isRead = msg.status === 'read';
+                statusHtml = `
+                    <span class="ml-2 text-[10px] ${isRead ? 'text-blue-500' : 'text-gray-400'} flex">
+                        ${isRead ? 
+                            `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7M5 18l4 4L19 12" style="transform:translateY(-2px)"/></svg>` : 
+                            `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>`
+                        }
+                    </span>
+                `;
+            } else if (msg.status !== 'read') {
+                // If partner's message is not read, mark it read via Gun!
+                db_msgs.get(msg.id).get('status').put('read');
+            }
+
+            const bubbleClass = isMe 
+                ? 'bg-gradient-to-br from-premiumBlue to-blue-500 text-white rounded-2xl rounded-br-sm shadow-md'
+                : 'bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-bl-sm shadow-sm';
+
+            msgEl.innerHTML = `
+                ${avatarHtml}
+                <div class="max-w-[75%] px-4 py-2 ${bubbleClass}">
+                    ${imageHtml}
+                    ${msg.text ? `<p class="text-sm md:text-base leading-relaxed break-words">${msg.text}</p>` : ''}
+                    <div class="flex items-center justify-end mt-1 space-x-1 opacity-80">
+                        <span class="text-[10px] font-medium tracking-wide ${isMe ? 'text-blue-50' : 'text-gray-400'}">${formatTime(msg.timestamp)}</span>
+                        ${statusHtml}
                     </div>
                 </div>
             `;
-            chatMessages.appendChild(bubble);
+            chatMessages.appendChild(msgEl);
         });
 
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // --- Message Input Logic ---
+    // --- Sending Messages ---
     messageForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const text = messageInput.value.trim();
         
         if (!text && !pendingChatImage) return;
 
-        const messages = getMessages();
-        messages.push({
-            id: Date.now().toString(),
+        const msgId = Date.now().toString();
+        const newMsg = {
+            id: msgId,
             senderId: currentUser,
             text: text,
-            imageUrl: pendingChatImage,
-            status: 'sent', // Initially sent
+            imageUrl: pendingChatImage || '',
+            status: 'sent',
             timestamp: new Date().toISOString()
-        });
-        localStorage.setItem('pampisUp_messages', JSON.stringify(messages));
+        };
+
+        // Publish to Realtime DB
+        db_msgs.get(msgId).put(newMsg);
         
         messageInput.value = '';
         messageInput.style.height = 'auto';
         
-        // Clear pending image
         pendingChatImage = null;
         imagePreviewContainer.classList.add('hidden');
         imagePreview.src = '';
         chatImageUpload.value = '';
-
-        renderMessages();
     });
 
     // --- Chat Image Upload Logic ---
@@ -311,13 +312,11 @@ document.addEventListener('DOMContentLoaded', () => {
         chatImageUpload.value = '';
     });
 
-    // Auto-resize textarea
     messageInput.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
     });
     
-    // Submit on Enter
     messageInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -325,34 +324,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Presence & Heartbeat Logic ---
+    // --- Presence (Online Status) Logic ---
     let heartbeatInterval;
     function startHeartbeat() {
         if(heartbeatInterval) clearInterval(heartbeatInterval);
         const beat = () => {
             if(!currentUser) return;
-            let presence = JSON.parse(localStorage.getItem('pampisUp_presence') || '{}');
-            presence[currentUser] = Date.now();
-            localStorage.setItem('pampisUp_presence', JSON.stringify(presence));
-            updateLastSeen(presence); // update UI
+            // Ping DB with current time
+            db_presence.get(currentUser).put(Date.now());
+            updateLastSeen(); 
         };
         beat();
         heartbeatInterval = setInterval(beat, 5000); // 5 sec
     }
 
-    function updateLastSeen(presenceData = null) {
-        const presence = presenceData || JSON.parse(localStorage.getItem('pampisUp_presence') || '{}');
+    function updateLastSeen() {
         const partnerId = currentUser === 'me' ? 'partner' : 'me';
-        const lastSeen = presence[partnerId];
+        const lastSeen = presenceData[partnerId];
         
         if (!lastSeen) {
-            partnerLastSeenEl.textContent = 'Bağlantı yok';
+            partnerLastSeenEl.textContent = 'Bağlantı bekleniyor...';
             partnerOnlineIndicator.className = 'absolute -bottom-1 -right-1 w-4 h-4 bg-gray-400 rounded-full border-2 border-white';
             return;
         }
 
         const diff = Date.now() - lastSeen;
-        if (diff < 12000) { // 12 seconds buffer
+        if (diff < 15000) { // 15 seconds buffer for online status
             partnerLastSeenEl.innerHTML = `Çevrimiçi <span class="w-1.5 h-1.5 rounded-full bg-premiumBlue animate-pulse inline-block mb-0.5 ml-0.5"></span>`;
             partnerLastSeenEl.className = 'text-xs text-premiumBlue font-medium flex items-center';
             partnerOnlineIndicator.className = 'absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-white online-pulse';
@@ -360,7 +357,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const date = new Date(lastSeen);
             const timeStr = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
             
-            // Check if today
             const today = new Date();
             const isToday = date.getDate() == today.getDate() && date.getMonth() == today.getMonth() && date.getFullYear() == today.getFullYear();
             
@@ -372,32 +368,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Sync Across Tabs ---
-    window.addEventListener('storage', (e) => {
-        if (!currentUser) return;
-        
-        if (e.key === 'pampisUp_messages') {
-            renderMessages();
-        }
-        if (e.key === 'pampisUp_profiles') {
-            loadProfileInfo();
-            renderMessages();
-        }
-        if (e.key === 'pampisUp_presence') {
-            updateLastSeen(JSON.parse(e.newValue));
-        }
-    });
+    // Trigger local update occasionally in case partner goes offline and no network events fire
+    setInterval(() => { if(currentUser) updateLastSeen(); }, 10000);
 
     // --- Profile Modal Logic ---
     let pendingProfileAvatar = null;
 
     function openProfile() {
-        const profiles = getProfiles();
         const myProfile = profiles[currentUser];
-        
         editName.value = myProfile.name;
-        // Eğer avatar resimse inputu boşaltıp görseli gösteriyoruz, değilse text olarak gösteriyoruz
-        if (myProfile.avatar.startsWith('data:image/')) {
+        
+        if (myProfile.avatar && myProfile.avatar.startsWith('data:image/')) {
             editAvatar.value = '';
             pendingProfileAvatar = myProfile.avatar;
         } else {
@@ -419,7 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
     profileBtn.addEventListener('click', openProfile);
     closeProfileBtn.addEventListener('click', closeProfile);
     
-    // Profil fotoğrafı yükleme tetikleyicisi
     profileAvatarPreviewContainer.addEventListener('click', () => {
         profileImageUpload.click();
     });
@@ -427,15 +407,14 @@ document.addEventListener('DOMContentLoaded', () => {
     profileImageUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-            compressImage(file, 200, (compressedDataUrl) => { // 200px yeterli
+            compressImage(file, 200, (compressedDataUrl) => {
                 pendingProfileAvatar = compressedDataUrl;
                 renderAvatar(compressedDataUrl, profileAvatarEmoji, profileAvatarImg);
-                editAvatar.value = ''; // Emoji kutusunu temizle
+                editAvatar.value = '';
             });
         }
     });
 
-    // Eğer kullanıcı manuel olarak emoji yazarsa yüklenen resmi iptal et
     editAvatar.addEventListener('input', () => {
         if (editAvatar.value.trim().length > 0) {
             pendingProfileAvatar = null;
@@ -444,19 +423,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     saveProfileBtn.addEventListener('click', () => {
-        const profiles = getProfiles();
-        profiles[currentUser].name = editName.value.trim() || profiles[currentUser].name;
+        const newName = editName.value.trim() || profiles[currentUser].name;
+        let newAvatar = profiles[currentUser].avatar;
         
-        // Eğer bekleyen bir resim varsa onu kullan, yoksa inputtaki text/emojiyi kullan
         if (pendingProfileAvatar) {
-            profiles[currentUser].avatar = pendingProfileAvatar;
+            newAvatar = pendingProfileAvatar;
         } else if (editAvatar.value.trim()) {
-            profiles[currentUser].avatar = editAvatar.value.trim();
+            newAvatar = editAvatar.value.trim();
         }
         
-        localStorage.setItem('pampisUp_profiles', JSON.stringify(profiles));
-        loadProfileInfo();
-        renderMessages();
+        // Publish to Gun.js
+        db_profiles.get(currentUser).put({
+            name: newName,
+            avatar: newAvatar
+        });
+
         closeProfile();
     });
 
