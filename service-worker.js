@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pampisup-v3-premium';
+const CACHE_NAME = 'pampisup-v4-premium';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
