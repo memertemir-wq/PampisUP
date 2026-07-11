@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -7,8 +7,8 @@
     
     <!-- PWA & Standalone Mode Enforcers -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2563eb">
-    <link rel="apple-touch-icon" href="icon.svg">
+    <meta name="theme-color" content="#2563eb" id="theme-color-meta">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,6 +20,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -29,6 +30,9 @@
                         premiumRedLight: '#fb7185',
                         glassBg: 'rgba(255, 255, 255, 0.75)',
                         glassBorder: 'rgba(255, 255, 255, 0.4)',
+                        darkGlassBg: 'rgba(30, 41, 59, 0.85)',
+                        darkGlassBorder: 'rgba(255, 255, 255, 0.1)',
+                        darkBg: '#0f172a',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -46,94 +50,178 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-800 font-sans h-screen w-screen overflow-hidden flex justify-center items-center">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-darkBg dark:to-slate-900 text-gray-800 dark:text-gray-100 font-sans h-screen w-screen overflow-hidden flex justify-center items-center transition-colors duration-500">
 
     <!-- Login Screen -->
-    <div id="login-screen" class="w-full max-w-md h-full sm:h-[85vh] bg-glassBg backdrop-blur-xl sm:rounded-[40px] sm:shadow-glass sm:border sm:border-glassBorder flex flex-col items-center justify-center p-8 transition-opacity duration-500 relative overflow-hidden">
+    <div id="login-screen" class="w-full max-w-md h-full sm:h-[85vh] bg-glassBg dark:bg-darkGlassBg backdrop-blur-xl sm:rounded-[40px] sm:shadow-glass sm:border sm:border-glassBorder dark:sm:border-darkGlassBorder flex flex-col items-center justify-center p-8 transition-opacity duration-500 relative overflow-hidden">
         
         <!-- Decorative background blobs -->
         <div class="absolute top-0 left-0 w-64 h-64 bg-premiumBlueLight rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-premiumRedLight rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
 
         <div class="relative z-10 flex flex-col items-center w-full">
-            <div class="mb-10 p-6 bg-white rounded-[32px] shadow-soft relative heartbeat">
+            <div class="mb-10 p-6 bg-white dark:bg-slate-800 rounded-[32px] shadow-soft relative heartbeat">
                 <svg class="w-16 h-16 text-premiumBlue" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
             </div>
-            <h1 class="text-4xl font-display font-bold text-gray-900 mb-3 tracking-tight">pampişUp</h1>
-            <p class="text-gray-500 mb-10 text-center font-medium">Bize özel güvenli alanımız ✨</p>
+            <h1 class="text-4xl font-display font-bold text-gray-900 dark:text-white mb-3 tracking-tight">pampişUp</h1>
+            <p class="text-gray-500 dark:text-gray-400 mb-10 text-center font-medium">Bize özel güvenli alanımız ✨</p>
             
             <div class="w-full space-y-5">
                 <div class="relative">
-                    <input type="password" id="password-input" placeholder="Şifremiz..." class="w-full p-5 rounded-2xl bg-white/60 border border-white focus:bg-white focus:ring-4 focus:ring-premiumBlue/20 focus:border-premiumBlue focus:outline-none transition-all text-center text-xl tracking-widest shadow-sm">
+                    <input type="password" id="password-input" placeholder="Şifremiz..." class="w-full p-5 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-white dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-premiumBlue/20 focus:border-premiumBlue focus:outline-none transition-all text-center text-xl tracking-widest shadow-sm dark:text-white">
                 </div>
                 <button id="login-btn" class="w-full p-5 bg-gradient-to-r from-premiumBlue to-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">Giriş Yap</button>
-                <p id="login-error" class="text-premiumRed text-sm text-center hidden font-medium bg-red-50 p-3 rounded-lg border border-red-100">Şifre yanlış olabilir mi? 🥺</p>
+                <p id="login-error" class="text-premiumRed text-sm text-center hidden font-medium bg-red-50 dark:bg-red-900/30 p-3 rounded-lg border border-red-100 dark:border-red-800/50">Şifre yanlış olabilir mi? 🥺</p>
             </div>
         </div>
     </div>
 
     <!-- Chat Screen -->
-    <div id="chat-screen" class="hidden w-full max-w-md h-full sm:h-[85vh] bg-gray-50/90 backdrop-blur-3xl sm:rounded-[40px] sm:shadow-glass sm:border sm:border-glassBorder flex-col relative overflow-hidden">
+    <div id="chat-screen" class="hidden w-full max-w-md h-full sm:h-[85vh] bg-gray-50/90 dark:bg-slate-900/90 backdrop-blur-3xl sm:rounded-[40px] sm:shadow-glass sm:border sm:border-glassBorder dark:sm:border-darkGlassBorder flex-col relative overflow-hidden">
         
         <!-- Chat Header -->
-        <header class="bg-white/80 backdrop-blur-xl px-5 py-4 flex items-center justify-between border-b border-gray-200/50 z-20 sticky top-0 shadow-sm">
-            <div class="flex items-center space-x-4">
+        <header class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl px-4 py-3 pt-[max(env(safe-area-inset-top,12px),12px)] flex items-center justify-between border-b border-gray-200/50 dark:border-gray-700/50 z-20 sticky top-0 shadow-sm">
+            <div class="flex items-center space-x-3">
                 <div class="relative">
-                    <div id="partner-avatar-container" class="w-12 h-12 bg-gradient-to-tr from-blue-100 to-indigo-50 rounded-[18px] flex items-center justify-center text-2xl shadow-sm border border-white overflow-hidden">
+                    <div id="partner-avatar-container" class="w-11 h-11 bg-gradient-to-tr from-blue-100 to-indigo-50 dark:from-slate-700 dark:to-slate-600 rounded-[16px] flex items-center justify-center text-2xl shadow-sm border border-white dark:border-slate-600 overflow-hidden">
                         <span id="partner-avatar-emoji">❤️</span>
                         <img id="partner-avatar-img" src="" class="hidden w-full h-full object-cover">
                     </div>
-                    <div id="partner-online-indicator" class="absolute -bottom-1 -right-1 w-4 h-4 bg-gray-400 rounded-full border-2 border-white"></div>
+                    <div id="partner-online-indicator" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-gray-400 rounded-full border-2 border-white dark:border-slate-800"></div>
                 </div>
                 <div>
-                    <h2 id="partner-name" class="font-display font-bold text-lg text-gray-900 leading-tight">Pampiş</h2>
-                    <p id="partner-last-seen" class="text-xs text-gray-500 font-medium">Bağlanıyor...</p>
+                    <h2 id="partner-name" class="font-display font-bold text-lg text-gray-900 dark:text-white leading-tight">Pampiş</h2>
+                    <p id="partner-last-seen" class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Bağlanıyor...</p>
                 </div>
             </div>
-            <button id="profile-btn" class="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            </button>
+            <div class="flex items-center space-x-1">
+                <button id="theme-btn" class="p-2.5 text-gray-400 dark:text-yellow-400 hover:text-gray-700 dark:hover:text-yellow-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl transition-all">
+                    <!-- Sun icon for dark mode, Moon for light mode (toggled in JS) -->
+                    <svg id="theme-icon-moon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <svg id="theme-icon-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </button>
+                <button id="profile-btn" class="p-2.5 text-gray-400 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+            </div>
         </header>
 
+        <!-- STORIES AREA (Instagram style) -->
+        <div id="stories-bar" class="w-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-md px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50 flex space-x-4 overflow-x-auto hide-scrollbar z-10 shrink-0">
+            <!-- Add Story Button -->
+            <div class="flex flex-col items-center space-y-1 cursor-pointer shrink-0" id="add-story-btn">
+                <div class="relative w-14 h-14 rounded-full border-2 border-dashed border-premiumBlue flex items-center justify-center text-premiumBlue bg-blue-50 dark:bg-blue-900/30 overflow-hidden">
+                    <svg class="w-6 h-6 z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <!-- My Avatar will be shown blurred behind the plus -->
+                    <img id="my-story-avatar-preview" src="" class="hidden absolute inset-0 w-full h-full object-cover opacity-30 blur-[2px]">
+                </div>
+                <span class="text-[10px] font-semibold text-gray-600 dark:text-gray-300">Sen</span>
+            </div>
+            
+            <input type="file" id="story-upload-input" accept="image/*" class="hidden">
+            
+            <!-- Dynamic Stories Container -->
+            <div id="stories-container" class="flex space-x-4 items-center">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
         <!-- Chat Messages Area -->
-        <main id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-6 z-10 relative scroll-smooth flex flex-col bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHRleHQgeT0iMjAiIHg9IjIwIiBmb250LXNpemU9IjgiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNlMmU4ZjAiPjE8L3RleHQ+PC9zdmc+')] bg-repeat">
+        <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 z-10 relative scroll-smooth flex flex-col bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHRleHQgeT0iMjAiIHg9IjIwIiBmb250LXNpemU9IjgiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNlMmU4ZjAiPjE8L3RleHQ+PC9zdmc+')] dark:bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHRleHQgeT0iMjAiIHg9IjIwIiBmb250LXNpemU9IjgiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMxZTI5M2IiPjE8L3RleHQ+PC9zdmc+')] bg-repeat">
             <!-- Messages will be injected here by app.js -->
         </main>
 
+        <!-- Reply Preview Area -->
+        <div id="reply-preview-container" class="hidden w-full bg-gray-50/95 dark:bg-slate-800/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 px-4 py-2 relative flex items-center justify-between z-20">
+            <div class="flex-1 flex flex-col border-l-4 border-premiumBlue pl-3">
+                <span id="reply-preview-name" class="text-xs font-bold text-premiumBlue">Partner</span>
+                <span id="reply-preview-text" class="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[250px]">Mesaj...</span>
+            </div>
+            <button type="button" id="close-reply-btn" class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full bg-gray-200 dark:bg-slate-700 h-7 w-7 flex items-center justify-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <!-- Image Preview Overlay -->
+        <div id="image-preview-container" class="hidden w-full p-4 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 z-20">
+            <div class="relative inline-block">
+                <img id="image-preview" src="" class="max-h-32 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <button type="button" id="remove-image-btn" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+
         <!-- Chat Input Area -->
-        <footer class="bg-white/90 backdrop-blur-xl px-4 py-3 border-t border-gray-200/50 z-20 pb-[max(env(safe-area-inset-bottom),12px)] shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] relative">
-            <form id="message-form" class="flex items-end space-x-3">
+        <footer class="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl px-3 py-3 border-t border-gray-200/50 dark:border-gray-700/50 z-20 pb-[max(env(safe-area-inset-bottom),12px)] shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] relative">
+            <form id="message-form" class="flex items-end space-x-2">
                 <input type="file" id="chat-image-upload" accept="image/*" class="hidden">
-                <button type="button" id="attach-btn" class="w-12 h-12 flex-shrink-0 text-gray-500 hover:text-premiumBlue bg-gray-100 hover:bg-blue-50 rounded-[20px] flex items-center justify-center transition-all">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-                </button>
-                <div class="flex-1 bg-gray-100/80 rounded-[24px] border border-gray-200 focus-within:border-premiumBlue focus-within:ring-2 focus-within:ring-premiumBlue/20 flex items-end px-4 py-2 transition-all">
-                    <textarea id="message-input" rows="1" placeholder="Mesaj yaz..." class="w-full bg-transparent resize-none outline-none max-h-32 text-gray-800 py-1.5 font-medium placeholder-gray-400" style="overflow-y: hidden;"></textarea>
-                </div>
-                <button type="submit" id="send-btn" class="w-12 h-12 flex-shrink-0 bg-premiumBlue text-white rounded-[20px] flex items-center justify-center shadow-lg shadow-blue-500/30 hover:bg-indigo-600 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <svg class="w-5 h-5 ml-1 transform -rotate-45" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7"></path></svg>
-                </button>
-            </form>
-            <!-- Image Preview Overlay -->
-            <div id="image-preview-container" class="hidden absolute bottom-full left-0 w-full p-4 bg-white/95 backdrop-blur-md border-t border-gray-200">
-                <div class="relative inline-block">
-                    <img id="image-preview" src="" class="max-h-32 rounded-xl border border-gray-200 shadow-sm">
-                    <button type="button" id="remove-image-btn" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <input type="file" id="camera-upload" accept="image/*" capture="environment" class="hidden">
+                
+                <div class="flex items-center space-x-1 shrink-0 pb-1">
+                    <button type="button" id="attach-btn" class="w-10 h-10 text-gray-500 dark:text-gray-400 hover:text-premiumBlue bg-gray-100 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                    </button>
+                    <!-- Camera Button -->
+                    <button type="button" id="camera-btn" class="w-10 h-10 text-gray-500 dark:text-gray-400 hover:text-premiumBlue bg-gray-100 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><circle cx="12" cy="13" r="3" stroke="currentColor" stroke-width="2"></circle></svg>
                     </button>
                 </div>
-            </div>
+                
+                <div class="flex-1 bg-gray-100/80 dark:bg-slate-700/80 rounded-[20px] border border-gray-200 dark:border-slate-600 focus-within:border-premiumBlue dark:focus-within:border-premiumBlue focus-within:ring-2 focus-within:ring-premiumBlue/20 flex items-end px-3 py-2 transition-all">
+                    <textarea id="message-input" rows="1" placeholder="Mesaj yaz..." class="w-full bg-transparent resize-none outline-none max-h-32 text-gray-800 dark:text-white py-1 font-medium placeholder-gray-400 dark:placeholder-gray-400" style="overflow-y: hidden;"></textarea>
+                </div>
+                
+                <button type="submit" id="send-btn" class="w-11 h-11 shrink-0 bg-premiumBlue text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 hover:bg-indigo-600 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed pb-0.5">
+                    <svg class="w-5 h-5 ml-0.5 transform -rotate-45" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7"></path></svg>
+                </button>
+            </form>
         </footer>
+    </div>
+
+    <!-- Story Modal (Instagram Style) -->
+    <div id="story-modal" class="hidden fixed inset-0 bg-black z-[100] flex-col transition-opacity duration-300 opacity-0">
+        <!-- Progress Bar Container -->
+        <div class="w-full flex space-x-1 p-2 pt-[max(env(safe-area-inset-top,12px),12px)] z-20 absolute top-0 left-0" id="story-progress-container">
+            <!-- Progress bars injected via JS -->
+        </div>
+        
+        <!-- Header -->
+        <div class="absolute top-[max(env(safe-area-inset-top,12px),12px)] left-0 w-full flex items-center justify-between px-4 mt-6 z-20">
+            <div class="flex items-center space-x-2">
+                <div id="story-modal-avatar-container" class="w-8 h-8 rounded-full border border-white flex items-center justify-center bg-gray-500 overflow-hidden text-sm"></div>
+                <div>
+                    <span id="story-modal-name" class="text-white font-bold text-sm drop-shadow-md">İsim</span>
+                    <span id="story-modal-time" class="text-gray-300 text-xs ml-2 drop-shadow-md">Zaman</span>
+                </div>
+            </div>
+            <!-- Delete Button (Only for my own stories) -->
+            <button id="delete-story-btn" class="hidden text-white p-2 drop-shadow-md hover:text-red-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+            <button id="close-story-btn" class="text-white p-2 drop-shadow-md">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <!-- Image Area -->
+        <div class="flex-1 relative bg-black flex items-center justify-center w-full h-full pb-[max(env(safe-area-inset-bottom),12px)]">
+            <img id="story-modal-img" src="" class="max-w-full max-h-full object-contain">
+            
+            <!-- Tap Zones -->
+            <div id="story-tap-left" class="absolute inset-y-0 left-0 w-1/3 z-10 cursor-pointer"></div>
+            <div id="story-tap-right" class="absolute inset-y-0 right-0 w-2/3 z-10 cursor-pointer"></div>
+        </div>
     </div>
 
     <!-- Profile Modal Overlay -->
     <div id="profile-modal" class="hidden fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-all duration-300">
-        <div class="bg-white/95 backdrop-blur-xl w-full max-w-sm rounded-[32px] shadow-2xl p-7 transform scale-95 transition-transform duration-300 border border-white">
+        <div class="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl w-full max-w-sm rounded-[32px] shadow-2xl p-7 transform scale-95 transition-transform duration-300 border border-white dark:border-slate-700">
             <div class="flex justify-between items-center mb-8">
-                <h3 class="text-2xl font-display font-bold text-gray-900">Profil Ayarları</h3>
-                <button id="close-profile-btn" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-200 transition-all">
+                <h3 class="text-2xl font-display font-bold text-gray-900 dark:text-white">Profil Ayarları</h3>
+                <button id="close-profile-btn" class="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-slate-700 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -141,30 +229,28 @@
             <div class="space-y-6">
                 <div class="flex flex-col items-center">
                     <div class="relative mb-2">
-                        <div id="profile-avatar-preview-container" class="w-24 h-24 bg-gradient-to-tr from-blue-100 to-indigo-50 rounded-3xl flex items-center justify-center text-4xl shadow-md border-2 border-white overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity">
+                        <div id="profile-avatar-preview-container" class="w-24 h-24 bg-gradient-to-tr from-blue-100 to-indigo-50 dark:from-slate-700 dark:to-slate-600 rounded-3xl flex items-center justify-center text-4xl shadow-md border-2 border-white dark:border-slate-600 overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity">
                             <span id="profile-avatar-emoji">❤️</span>
                             <img id="profile-avatar-img" src="" class="hidden w-full h-full object-cover">
-                            <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
                             </div>
                         </div>
                         <input type="file" id="profile-image-upload" accept="image/*" class="hidden">
                     </div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Fotoğraf veya Emoji</label>
-                    <input type="text" id="edit-avatar" placeholder="Örn: 🦋 veya Foto Seç" class="mt-2 w-full p-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-premiumBlue focus:ring-4 focus:ring-premiumBlue/10 focus:outline-none text-center text-xl transition-all shadow-sm">
+                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide text-center">Fotoğraf veya Emoji</label>
+                    <input type="text" id="edit-avatar" placeholder="Örn: 🦋 veya Foto Seç" class="mt-2 w-full p-3 rounded-xl bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 focus:border-premiumBlue focus:ring-4 focus:ring-premiumBlue/10 focus:outline-none text-center text-xl transition-all shadow-sm dark:text-white">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">Görünen Ad</label>
-                    <input type="text" id="edit-name" class="w-full p-4 rounded-2xl bg-gray-50 border border-gray-200 focus:border-premiumBlue focus:ring-4 focus:ring-premiumBlue/10 focus:outline-none font-semibold text-lg text-gray-800 transition-all shadow-sm">
+                    <label class="block text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Görünen Ad</label>
+                    <input type="text" id="edit-name" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 focus:border-premiumBlue focus:ring-4 focus:ring-premiumBlue/10 focus:outline-none font-semibold text-lg text-gray-800 dark:text-white transition-all shadow-sm">
                 </div>
                 <div class="pt-4 flex flex-col space-y-3">
-                    <button id="save-profile-btn" class="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl hover:bg-gray-800 transition-all shadow-md">Değişiklikleri Kaydet</button>
-                    <button id="logout-btn" class="w-full bg-red-50 text-premiumRed font-bold py-4 rounded-2xl hover:bg-red-100 transition-all border border-red-100">Hesaptan Çıkış Yap</button>
+                    <button id="save-profile-btn" class="w-full bg-gray-900 dark:bg-premiumBlue text-white font-bold py-4 rounded-2xl hover:bg-gray-800 dark:hover:bg-blue-600 transition-all shadow-md">Değişiklikleri Kaydet</button>
+                    <button id="logout-btn" class="w-full bg-red-50 dark:bg-red-900/30 text-premiumRed dark:text-red-400 font-bold py-4 rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/50 transition-all border border-red-100 dark:border-red-900/50">Hesaptan Çıkış Yap</button>
                 </div>
             </div>
         </div>
-    </div>
-
     </div>
 
     <!-- Firebase SDK (Version 8) -->

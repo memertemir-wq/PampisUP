@@ -15,6 +15,23 @@
     background: #94a3b8; /* slate-400 */
 }
 
+/* Dark Mode Scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569; /* slate-600 */
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #64748b; /* slate-500 */
+}
+
+/* Hide Scrollbar for Stories */
+.hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
 /* Animations */
 @keyframes heartbeat {
     0%, 100% {
@@ -49,7 +66,7 @@
     animation: onlinePulse 2s infinite;
 }
 
-@keyframes popIn {
+@keyframes bubbleIn {
     0% {
         opacity: 0;
         transform: scale(0.95) translateY(10px);
@@ -59,8 +76,8 @@
         transform: scale(1) translateY(0);
     }
 }
-.message-bubble {
-    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+.animate-bubbleIn {
+    animation: bubbleIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 @keyframes blob {
