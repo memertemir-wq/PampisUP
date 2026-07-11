@@ -52,6 +52,9 @@
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-darkBg dark:to-slate-900 text-gray-800 dark:text-gray-100 font-sans h-screen w-screen overflow-hidden flex justify-center items-center transition-colors duration-500">
 
+    <!-- Floating Hearts Background Container -->
+    <div id="hearts-container" class="absolute inset-0 overflow-hidden pointer-events-none z-0"></div>
+
     <!-- Login Screen -->
     <div id="login-screen" class="w-full max-w-md h-full sm:h-[85vh] bg-glassBg dark:bg-darkGlassBg backdrop-blur-xl sm:rounded-[40px] sm:shadow-glass sm:border sm:border-glassBorder dark:sm:border-darkGlassBorder flex flex-col items-center justify-center p-8 transition-opacity duration-500 relative overflow-hidden">
         
@@ -270,6 +273,21 @@
                     <!-- Injected via JS -->
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Reaction Menu Overlay -->
+    <div id="reaction-menu-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+        <!-- Close area -->
+        <div id="reaction-menu-bg" class="absolute inset-0 bg-transparent"></div>
+        <!-- Menu -->
+        <div id="reaction-menu-content" class="relative flex space-x-3 bg-white dark:bg-slate-800 px-4 py-3 rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 dark:border-slate-700 opacity-0 transition-opacity duration-200">
+            <button class="reaction-btn text-2xl hover:scale-125 transition-transform origin-bottom" data-emoji="❤️">❤️</button>
+            <button class="reaction-btn text-2xl hover:scale-125 transition-transform origin-bottom" data-emoji="😂">😂</button>
+            <button class="reaction-btn text-2xl hover:scale-125 transition-transform origin-bottom" data-emoji="😮">😮</button>
+            <button class="reaction-btn text-2xl hover:scale-125 transition-transform origin-bottom" data-emoji="😢">😢</button>
+            <button class="reaction-btn text-2xl hover:scale-125 transition-transform origin-bottom" data-emoji="👍">👍</button>
+            <button class="reaction-btn text-2xl hover:scale-125 transition-transform origin-bottom" data-emoji="👎">👎</button>
         </div>
     </div>
 

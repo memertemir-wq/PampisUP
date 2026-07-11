@@ -105,6 +105,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
     const themeBtn = document.getElementById('theme-btn');
 
+    // Reaction Elements
+    const reactionMenuOverlay = document.getElementById('reaction-menu-overlay');
+    const reactionMenuBg = document.getElementById('reaction-menu-bg');
+    const reactionMenuContent = document.getElementById('reaction-menu-content');
+    const reactionBtns = document.querySelectorAll('.reaction-btn');
+    
+    let activeReactionMsgId = null;
+
+    // --- Floating Hearts Animation ---
+    let heartsInterval;
+    const heartsContainer = document.getElementById('hearts-container');
+    function startHearts() {
+        if(heartsInterval) clearInterval(heartsInterval);
+        heartsContainer.innerHTML = ''; // clear existing
+        heartsInterval = setInterval(() => {
+            if(chatScreen.classList.contains('hidden') === false) return; // stop if chat is open
+            const heart = document.createElement('div');
+            heart.className = 'floating-heart text-2xl';
+            heart.innerHTML = ['❤️','💖','💘','💝','💕'][Math.floor(Math.random() * 5)];
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = (Math.random() * 3 + 4) + 's';
+            heart.style.fontSize = (Math.random() * 1.5 + 1) + 'rem';
+            heartsContainer.appendChild(heart);
+            setTimeout(() => {
+                if(heart.parentNode) heart.parentNode.removeChild(heart);
+            }, 7000);
+        }, 600);
+    }
+    function stopHearts() {
+        clearInterval(heartsInterval);
+        heartsContainer.innerHTML = '';
+    }
+
     // --- Koyu Tema (Dark Mode) ---
     let isDarkMode = localStorage.getItem('pampisUp_theme') === 'dark';
     function applyTheme() {
@@ -182,12 +215,14 @@ document.addEventListener('DOMContentLoaded', () => {
         chatScreen.classList.add('hidden');
         passwordInput.value = '';
         loginError.classList.add('hidden');
+        startHearts();
     }
 
     function showChat() {
         loginScreen.classList.add('hidden');
         chatScreen.classList.remove('hidden');
         chatScreen.classList.add('flex');
+        stopHearts();
     }
 
     function handleLogin() {
@@ -338,42 +373,99 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
 
+            // Check for Reactions
+            let reactionsHtml = '';
+            if (msg.reactions) {
+                const reacts = Object.values(msg.reactions); // array of emojis
+                if (reacts.length > 0) {
+                    // count duplicates
+                    const reactCounts = {};
+                    reacts.forEach(r => reactCounts[r] = (reactCounts[r] || 0) + 1);
+                    const badges = Object.entries(reactCounts).map(([emoji, count]) => {
+                        return `<span class="inline-flex items-center space-x-0.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-0.5 textxs shadow-sm">
+                            <span>${emoji}</span>
+                            ${count > 1 ? `<span class="text-[10px] text-gray-500 dark:text-gray-300 ml-0.5">${count}</span>` : ''}
+                        </span>`;
+                    }).join('');
+                    
+                    reactionsHtml = `
+                        <div class="absolute -bottom-3 ${isMe ? 'right-2' : 'left-2'} flex space-x-1 z-10">
+                            ${badges}
+                        </div>
+                    `;
+                }
+            }
+
             msgEl.id = `msg-${msg.id}`;
             msgEl.innerHTML = `
                 ${avatarHtml}
-                <div class="max-w-[75%] px-4 py-2 ${bubbleClass}">
+                <div class="max-w-[75%] px-4 py-2 ${bubbleClass} relative">
                     ${replyHtml}
                     ${imageHtml}
-                    ${msg.text ? `<p class="text-[15px] leading-relaxed break-words whitespace-pre-wrap">${msg.text}</p>` : ''}
-                    <div class="flex items-center justify-end mt-1 space-x-1 opacity-80">
+                    ${msg.text ? `<p class="text-[15px] leading-relaxed break-words whitespace-pre-wrap relative z-0">${msg.text}</p>` : ''}
+                    <div class="flex items-center justify-end mt-1 space-x-1 opacity-80 relative z-0">
                         <span class="text-[10px] font-medium tracking-wide ${isMe ? 'text-blue-50' : 'text-gray-400 dark:text-gray-400'}">${formatTime(msg.timestamp)}</span>
                         ${statusHtml}
                     </div>
+                    ${reactionsHtml}
                 </div>
             `;
             
-            // Swipe to Reply Logic
+            // Swipe to Reply & Long Press to React Logic
             let touchStartX = 0;
+            let touchStartY = 0;
             let currentTranslate = 0;
+            let isScrolling = false;
+            let isSwiping = false;
+            let pressTimer = null;
             
             msgEl.addEventListener('touchstart', e => {
                 touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                isScrolling = false;
+                isSwiping = false;
                 msgEl.style.transition = 'none';
+
+                // Start Long Press timer
+                pressTimer = setTimeout(() => {
+                    if (!isScrolling && !isSwiping) {
+                        openReactionMenu(msg.id);
+                        if (navigator.vibrate) navigator.vibrate(50);
+                    }
+                }, 400); // 400ms is a good long press time
             }, {passive: true});
             
             msgEl.addEventListener('touchmove', e => {
+                if (isScrolling) return;
+
                 const touchX = e.touches[0].clientX;
-                const diff = touchX - touchStartX;
-                if (diff > 0 && diff < 80) {
-                    currentTranslate = diff;
-                    msgEl.style.transform = `translateX(${diff}px)`;
+                const touchY = e.touches[0].clientY;
+                const diffX = touchX - touchStartX;
+                const diffY = touchY - touchStartY;
+
+                if (!isSwiping && !isScrolling) {
+                    if (Math.abs(diffY) > 10) {
+                        isScrolling = true;
+                        clearTimeout(pressTimer);
+                        return;
+                    }
+                    if (Math.abs(diffX) > 10) {
+                        isSwiping = true;
+                        clearTimeout(pressTimer);
+                    }
+                }
+
+                if (isSwiping && diffX > 0 && diffX < 80) {
+                    currentTranslate = diffX;
+                    msgEl.style.transform = `translateX(${diffX}px)`;
                 }
             }, {passive: true});
 
             msgEl.addEventListener('touchend', e => {
-                msgEl.style.transition = 'transform 0.2s ease-out';
+                clearTimeout(pressTimer);
+                msgEl.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                 msgEl.style.transform = 'translateX(0)';
-                if (currentTranslate > 50) {
+                if (currentTranslate > 40) {
                     startReplying(msg);
                 }
                 currentTranslate = 0;
@@ -450,6 +542,45 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             submitMessage();
         }
+    });
+
+    // --- Reaction Logic ---
+    function openReactionMenu(msgId) {
+        activeReactionMsgId = msgId;
+        reactionMenuOverlay.classList.remove('hidden');
+        setTimeout(() => {
+            reactionMenuContent.classList.add('reaction-menu-active');
+            reactionMenuContent.classList.remove('opacity-0');
+        }, 10);
+    }
+
+    function closeReactionMenu() {
+        activeReactionMsgId = null;
+        reactionMenuContent.classList.remove('reaction-menu-active');
+        reactionMenuContent.classList.add('opacity-0');
+        setTimeout(() => {
+            reactionMenuOverlay.classList.add('hidden');
+        }, 200);
+    }
+
+    reactionMenuBg.addEventListener('click', closeReactionMenu);
+
+    reactionBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const emoji = btn.getAttribute('data-emoji');
+            if (activeReactionMsgId && emoji) {
+                // Toggle or Set reaction
+                const currentReaction = messagesObj[activeReactionMsgId]?.reactions?.[currentUser];
+                if (currentReaction === emoji) {
+                    // Remove if same
+                    msgsRef.child(activeReactionMsgId).child('reactions').child(currentUser).remove();
+                } else {
+                    // Set new
+                    msgsRef.child(activeReactionMsgId).child('reactions').child(currentUser).set(emoji);
+                }
+            }
+            closeReactionMenu();
+        });
     });
 
     // --- Image & Camera Upload Logic ---
