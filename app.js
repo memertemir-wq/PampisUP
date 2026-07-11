@@ -73,6 +73,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeReplyBtn = document.getElementById('close-reply-btn');
 
     // Stories Elements
+    const openStoriesMenuBtn = document.getElementById('open-stories-menu-btn');
+    const storiesMenuModal = document.getElementById('stories-menu-modal');
+    const storiesMenuContent = document.getElementById('stories-menu-content');
+    const closeStoriesMenuBtn = document.getElementById('close-stories-menu-btn');
+    const storiesUnseenIndicator = document.getElementById('stories-unseen-indicator');
+    
     const addStoryBtn = document.getElementById('add-story-btn');
     const storyUploadInput = document.getElementById('story-upload-input');
     const storiesContainer = document.getElementById('stories-container');
@@ -478,6 +484,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Stories Logic ---
+    function openStoriesMenu() {
+        storiesMenuModal.classList.remove('hidden');
+        // Give a tiny delay for browser to register display:block before transitioning opacity
+        setTimeout(() => {
+            storiesMenuModal.classList.remove('opacity-0');
+            storiesMenuContent.classList.remove('translate-y-full');
+        }, 10);
+    }
+
+    function closeStoriesMenu() {
+        storiesMenuModal.classList.add('opacity-0');
+        storiesMenuContent.classList.add('translate-y-full');
+        setTimeout(() => {
+            storiesMenuModal.classList.add('hidden');
+        }, 300);
+    }
+
+    openStoriesMenuBtn.addEventListener('click', openStoriesMenu);
+    closeStoriesMenuBtn.addEventListener('click', closeStoriesMenu);
+    
+    // Close modal if clicked outside
+    storiesMenuModal.addEventListener('click', (e) => {
+        if (e.target === storiesMenuModal) {
+            closeStoriesMenu();
+        }
+    });
+
     addStoryBtn.addEventListener('click', () => {
         storyUploadInput.click();
     });
@@ -535,11 +568,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const partnerId = currentUser === 'me' ? 'partner' : 'me';
         if (groupedStories[partnerId].length > 0) {
             const partnerStoryBubble = document.createElement('div');
-            partnerStoryBubble.className = "flex flex-col items-center space-y-1 cursor-pointer shrink-0";
+            partnerStoryBubble.className = "flex flex-col items-center space-y-1.5 cursor-pointer shrink-0";
             
             let viewedStories = JSON.parse(localStorage.getItem('pampisUp_viewedStories') || '[]');
             const allViewed = groupedStories[partnerId].every(s => viewedStories.includes(s.id));
             
+            // Handle unseen indicator on the top header button
+            if (!allViewed) {
+                storiesUnseenIndicator.classList.remove('hidden');
+            } else {
+                storiesUnseenIndicator.classList.add('hidden');
+            }
+
             const ringColor = allViewed ? 'border-gray-300 dark:border-gray-600' : 'border-premiumRed';
 
             let avatarContent = profiles[partnerId].avatar.startsWith('data:image/') 
@@ -547,18 +587,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 : `<span class="text-2xl">${profiles[partnerId].avatar}</span>`;
 
             partnerStoryBubble.innerHTML = `
-                <div class="w-14 h-14 rounded-full border-[3px] ${ringColor} p-0.5">
+                <div class="w-16 h-16 rounded-full border-[3px] ${ringColor} p-0.5 shadow-sm">
                     <div class="w-full h-full rounded-full bg-blue-100 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
                         ${avatarContent}
                     </div>
                 </div>
-                <span class="text-[10px] font-semibold text-gray-800 dark:text-gray-200">${profiles[partnerId].name}</span>
+                <span class="text-[11px] font-semibold text-gray-800 dark:text-gray-200">${profiles[partnerId].name}</span>
             `;
 
             partnerStoryBubble.addEventListener('click', () => {
                 openStoryModal(groupedStories[partnerId], partnerId);
             });
             storiesContainer.appendChild(partnerStoryBubble);
+        } else {
+            storiesUnseenIndicator.classList.add('hidden');
         }
         
         // Also allow clicking 'Sen' to view own stories
