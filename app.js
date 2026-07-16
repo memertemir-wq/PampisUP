@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Initialization ---
     function init() {
         if (currentUser) {
-            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            if ('Notification' in window && window.Notification && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
                 Notification.requestPermission();
             }
             showChat();
@@ -243,7 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             showLogin();
         }
-    }
     }
 
     function showLogin() {
@@ -339,9 +338,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
     }
 
-    
     function showNotification(title, body) {
-        if (Notification.permission === 'granted' && document.hidden) {
+        if ('Notification' in window && window.Notification && Notification.permission === 'granted' && document.hidden) {
             new Notification(title, { body: body, icon: 'https://cdn-icons-png.flaticon.com/512/833/833472.png' });
         }
     }
